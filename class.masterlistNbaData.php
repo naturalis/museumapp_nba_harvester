@@ -14,9 +14,8 @@ CREATE TABLE `nba` (
 
 */
 
-    class MasterlistNbaData {
-
-        private $db;
+    class MasterlistNbaData extends BaseClass
+    {
         private $unitids = [];
         private $queryTpl = '{
             "conditions" : [
@@ -29,18 +28,14 @@ CREATE TABLE `nba` (
         private $data=[];
         private $inserted=0;
 
+        const TABLE = 'nba';
         const TABLE_MASTER = 'tentoonstelling';
-        const CHUNK_SIZE = 750;
+        const CHUNK_SIZE = 250;
         const MAX_CHUNK_SIZE = 1024;
-
-        public function setDatabaseCredentials( $p )
-        {
-            $this->db_credentials = $p;
-        }
 
         public function setMasterlistObjects()
         {
-            $this->_connectDatabase();
+            $this->connectDatabase();
             $this->masterList = $this->_getMySQLSource( self::TABLE_MASTER );
             $this->masterList = array_unique(array_map(function($a)
             {
@@ -80,9 +75,9 @@ CREATE TABLE `nba` (
         {
             $this->log("truncating table");
 
-            $this->db->query("truncate nba");
+            $this->db->query("truncate " . self::TABLE);
 
-            $stmt = $this->db->prepare("insert into nba (unitid,name,document) values (?,?,?)");
+            $stmt = $this->db->prepare("insert into ".self::TABLE." (unitid,name,document) values (?,?,?)");
 
             foreach($this->data as $val)
             {
@@ -124,19 +119,6 @@ CREATE TABLE `nba` (
             }
         }
 
-
-        private function _connectDatabase()
-        {
-            $this->db = new mysqli(
-                $this->db_credentials["host"],
-                $this->db_credentials["user"],
-                $this->db_credentials["pass"]
-            );
-
-            $this->db->select_db($this->db_credentials["database"]);
-            $this->db->set_charset("utf8");
-        }
-
         private function _getMySQLSource( $source )
         {
             $list=[];
@@ -153,17 +135,5 @@ CREATE TABLE `nba` (
             }
 
             return $list;
-        }
-
-        public function log($message, $level = 3)
-        {
-            $levels = [
-                1 => 'Error',
-                2 => 'Warning',
-                3 => 'Info',
-                4 => 'Debug',
-            ];
-            echo date('d-M-Y H:i:s') . ' - ' . 'NBA' . ' - ' .
-                $levels[$level] . ' - ' . $message . "\n";
         }
     }
