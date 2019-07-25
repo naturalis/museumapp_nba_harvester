@@ -4,6 +4,7 @@ class BaseClass
 {
 
     public $db;
+    public $total=0;
 
     public function setDatabaseCredentials( $p )
     {

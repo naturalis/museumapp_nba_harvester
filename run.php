@@ -6,6 +6,7 @@
     $db["database"] = isset($_ENV["MYSQL_DATABASE"]) ? $_ENV["MYSQL_DATABASE"] : 'reaper';
 
     $opt = getopt("",["source:"]);
+    $limit = getopt("",["limit:"]) ?? 0;
 
     if (!isset($opt["source"]))
     {
@@ -16,6 +17,7 @@
     include_once('class.baseClass.php');
     include_once('class.masterlistNbaData.php');
     include_once('class.leenobjectenData.php');
+    include_once('class.favouritesData.php');
     include_once("class.iucnData.php");
 
     switch ($opt["source"])
@@ -45,6 +47,15 @@
             
             break;
 
+        case "favourites":
+
+            $n = new FavouritesData;
+
+            $n->setDatabaseCredentials( $db );
+            $n->import();
+            
+            break;
+
         case "iucn":
 
             $iucnToken = isset($_ENV["REAPER_KEY_IUCN"]) ? $_ENV["REAPER_KEY_IUCN"] : null;
@@ -62,13 +73,13 @@
 
             $n->setSleepInterval( $sleepInterval );
             $n->setIucnToken( $iucnToken );
+            $n->setTaxonLimit( $limit );
             $n->setIucnUrl( "regions", $urlRegions );
             $n->setIucnUrl( "species", $urlSpecies );
             $n->setIucnUrl( "citation", $urlCitation );
 
             $n->getTaxonList();
             $n->getRegions();
-            // $n->filterTaxonList();
             $n->getIUCNStatuses();
             $n->storeData();
             

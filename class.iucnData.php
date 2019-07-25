@@ -9,6 +9,8 @@
         private $regions;
         private $statuses;
         private $sleepInterval = 2; // sec.
+        private $mode = "add";
+        private $taxonLimit = 0;
 
         const TABLE_TAXONLIST = 'taxonlist';
         const TABLE_IUCN = 'iucn';
@@ -21,6 +23,20 @@
         public function setIucnToken( $token )
         {
             $this->token = $token;
+        }
+
+        public function setInsertMode( $mode )
+        {
+            if (in_array($mode, ["add","replace"]))
+            {
+                $this->mode = $mode;
+            }
+        }
+
+        public function setTaxonLimit( $limit )
+        {
+            // for debugging!
+            $this->taxonLimit = $limit;
         }
 
         public function setIucnUrl( $type, $url )
@@ -45,7 +61,16 @@
 
         public function getTaxonList()
         {
-            $sql = $this->db->query("select * from " . self::TABLE_TAXONLIST);
+
+            if ($this->mode=="replace")
+            {
+                $sql = $this->db->query("select * from " . self::TABLE_TAXONLIST);
+            }
+            else
+            {
+                $sql = $this->db->query("select _a.* from ".self::TABLE_TAXONLIST." _a left join ".self::TABLE_IUCN." _b on _a.taxon = _b.scientific_name where _b.id is null");
+            }
+
             $list=[];
 
             while ($row = $sql->fetch_assoc())
@@ -70,34 +95,10 @@
             });
         }
 
-        public function filterTaxonList()
-        {
-            $taxonListExisting=[];
-
-            foreach ($this->taxonList as $taxon)
-            {
-                $url = sprintf($this->URLs["citation"], rawurlencode($taxon["taxon"]), $this->token);
-                $json = file_get_contents($url);
-                $data = json_decode($json,true);
-
-                if(isset($data["name"]) && isset($data["result"]))
-                {
-                    $taxonListExisting[]=$taxon;
-                    $this->log(sprintf("existing taxon: '%s'",$taxon["taxon"]),3, "IUCN");
-                }
-                else
-                {
-                    $this->log(sprintf("non existing taxon: '%s'",$taxon["taxon"]),3, "IUCN");
-                }
-
-                sleep($this->sleepInterval);
-            }
-
-            $this->taxonList = $taxonListExisting;
-        }
-
         public function getIUCNStatuses()
         {
+            $found=[];
+
             foreach ($this->taxonList as $taxon)
             {
                 foreach ($this->regions as $rKey => $region)
@@ -110,12 +111,19 @@
                     {
                         $this->statuses[]=[ "taxon" => $taxon["taxon"], "region" => $region["name"], "data" => $data["result"][0] ];
                         $this->log(sprintf("found status for '%s' in '%s'",$taxon["taxon"],$region["identifier"]),3, "IUCN");
+                        $found[$taxon["taxon"]]=true;
 
-                        if ($rKey==0) // global
+                        if ($rKey==0) // region=global
                         {
                             break;
                         }
                     }
+                }
+
+                if ($this->taxonLimit>0 && count($found)>=$this->taxonLimit)
+                {
+                    $this->log(sprintf("halted retrieval on taxon limit %s (used for debugging)",$this->taxonLimit),3, "IUCN");
+                    break;
                 }
 
                 sleep($this->sleepInterval);
@@ -124,9 +132,11 @@
 
         public function storeData()
         {
-            $this->log("truncating table", 4, "IUCN");
-
-            $this->db->query("truncate " . self::TABLE_IUCN);
+            if ($this->mode=="replace")
+            {
+                $this->log("truncating table", 4, "IUCN");
+                $this->db->query("truncate " . self::TABLE_IUCN);
+            }
 
             $stmt = $this->db->prepare("insert into ".self::TABLE_IUCN." (scientific_name,region,category,criteria,population_trend,assessment_date) values (?,?,?,?,?,?)");
 
