@@ -11,9 +11,25 @@
         private $sleepInterval = 2; // sec.
         private $mode = "add";
         private $taxonLimit = 0;
+        private $collectionsToIgnore = [
+            "Mineralogy",
+            "Mineralogy and Petrology",
+            "Paleontology",
+            "Paleontology Invertebrates",
+            "Paleontology Vertebrates",
+            "Petrology"
+        ];
 
         const TABLE_TAXONLIST = 'taxonlist';
         const TABLE_IUCN = 'iucn';
+
+        public function __construct ()
+        {
+            $this->ctx = stream_context_create(
+                [ "http" =>  [ "timeout" => 5 ] ],
+                [ "notification" => [ $this, "stream_notification_callback" ] ] 
+            );
+        }
 
         public function setSleepInterval( $sleepInterval )
         {
@@ -56,19 +72,20 @@
             {
                 throw new Exception(sprintf("URL type: %s",$type), 1);                    
             }
-
         }
 
         public function getTaxonList()
         {
 
+            $this->log(sprintf("ignoring collections: %s",implode("; ",$this->collectionsToIgnore)),3, "IUCN");
+
             if ($this->mode=="replace")
             {
-                $sql = $this->db->query("select * from " . self::TABLE_TAXONLIST);
+                $sql = $this->db->query("select * from " . self::TABLE_TAXONLIST . " where collection not in ('".implode("','", $this->collectionsToIgnore)."')");
             }
             else
             {
-                $sql = $this->db->query("select _a.* from ".self::TABLE_TAXONLIST." _a left join ".self::TABLE_IUCN." _b on _a.taxon = _b.scientific_name where _b.id is null");
+                $sql = $this->db->query("select _a.* from ".self::TABLE_TAXONLIST." _a left join ".self::TABLE_IUCN." _b on _a.taxon = _b.scientific_name where _b.id is null and _a.collection not in ('".implode("','", $this->collectionsToIgnore)."')");
             }
 
             $list=[];
@@ -77,12 +94,14 @@
             {
                 $this->taxonList[]=$row;
             }
+
+            $this->log(sprintf("got %s taxa (mode: %s)",count($this->taxonList),$this->mode),3, "IUCN");
         }
 
         public function getRegions()
         {
             $url = sprintf($this->URLs["regions"], $this->token);
-            $json = file_get_contents($url);
+            $json = file_get_contents($url,false,$this->ctx);
             $data = json_decode($json,true);
 
             $this->regions = (array)$data["results"];
@@ -93,10 +112,15 @@
                 if ($b["identifier"]=="global") return 1;
                 return $a>$b;
             });
+
+            $this->log(sprintf("retrieved %s regions",count($this->regions)),3, "IUCN");
         }
 
         public function getIUCNStatuses()
         {
+
+            $this->log(sprintf("set sleep interval %ss.",$this->sleepInterval),3, "IUCN");
+
             $found=[];
 
             foreach ($this->taxonList as $taxon)
@@ -104,7 +128,7 @@
                 foreach ($this->regions as $rKey => $region)
                 {
                     $url = sprintf($this->URLs["species"], rawurlencode($taxon["taxon"]), $region["identifier"], $this->token);
-                    $json = file_get_contents($url);
+                    $json = file_get_contents($url,false,$this->ctx);
                     $data = json_decode($json,true);
 
                     if (isset($data["result"]) && !empty($data["result"]))
@@ -119,6 +143,14 @@
                         }
                     }
                 }
+
+                if(!isset($found[$taxon["taxon"]]) || !$found[$taxon["taxon"]])
+                {
+                    $this->log(sprintf("found no status for '%s'",$taxon["taxon"]),3, "IUCN");
+                }
+
+                flush();
+                ob_flush();                    
 
                 if ($this->taxonLimit>0 && count($found)>=$this->taxonLimit)
                 {
@@ -158,6 +190,47 @@
 
             $this->log("done",4, "IUCN");
 
+        }
+
+        private function stream_notification_callback($notification_code, $severity, $message, $message_code, $bytes_transferred, $bytes_max)
+        {
+            switch($notification_code)
+            {
+                case STREAM_NOTIFY_RESOLVE:
+                case STREAM_NOTIFY_AUTH_REQUIRED:
+                case STREAM_NOTIFY_COMPLETED:
+                case STREAM_NOTIFY_FAILURE:
+                case STREAM_NOTIFY_AUTH_RESULT:
+                    $serious=true;
+                    $out = print_r($notification_code, $severity, $message, $message_code, $bytes_transferred, $bytes_max,true);
+                    /* Ignore */
+                    break;
+
+                case STREAM_NOTIFY_REDIRECTED:
+                    $out = "Being redirected to: " . $message;
+                    break;
+
+                case STREAM_NOTIFY_CONNECT:
+                    $out = "Connected...";
+                    break;
+
+                case STREAM_NOTIFY_FILE_SIZE_IS:
+                    $out = "Got the filesize: " . $bytes_max;
+                    break;
+
+                case STREAM_NOTIFY_MIME_TYPE_IS:
+                    $out = "Found the mime-type: " . $message;
+                    break;
+
+                case STREAM_NOTIFY_PROGRESS:
+                    $out = "Made some progress, downloaded " . $bytes_transferred . " so far";
+                    break;
+            }
+
+            if ($serious==true)
+            {
+                $this->log($out,4, "IUCN");
+            }
         }
 
     }

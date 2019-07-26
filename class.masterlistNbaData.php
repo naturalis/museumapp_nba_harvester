@@ -77,11 +77,11 @@ CREATE TABLE `nba` (
 
             $this->db->query("truncate " . self::TABLE);
 
-            $stmt = $this->db->prepare("insert into ".self::TABLE." (unitid,name,document) values (?,?,?)");
+            $stmt = $this->db->prepare("insert into ".self::TABLE." (unitid,name,collection,document) values (?,?,?,?)");
 
             foreach($this->data as $val)
             {
-                $stmt->bind_param('sss', $val["unitid"], $val["name"], $val["document"]);                
+                $stmt->bind_param('ssss', $val["unitid"], $val["name"], $val["collection"], $val["document"]);
                 $stmt->execute();
                 $this->inserted++;
                 $this->log(sprintf("inserted data for '%s'",$val["unitid"]));
@@ -102,6 +102,7 @@ CREATE TABLE `nba` (
 
             foreach($data["resultSet"] as $item)
             {
+                $collection=$item["item"]["collectionType"];
                 $name=null;
                 foreach($item["item"]["identifications"] as $ident)
                 {
@@ -114,6 +115,7 @@ CREATE TABLE `nba` (
                 $this->data[] = [
                     "unitid" => $item["item"]["unitID"],
                     "name" => json_encode($name),
+                    "collection" => $collection,
                     "document" => json_encode($item["item"])
                 ];
             }

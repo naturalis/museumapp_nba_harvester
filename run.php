@@ -67,7 +67,7 @@
             $sleepInterval = isset($_ENV["REAPER_RATE_LIMIT_IUCN"]) ? $_ENV["REAPER_RATE_LIMIT_IUCN"] : 0;
 
             $n = new IUCNData;
-
+echo '<pre>';
             $n->setDatabaseCredentials( $db );
             $n->connectDatabase();
 

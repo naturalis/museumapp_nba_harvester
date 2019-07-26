@@ -35,7 +35,7 @@ class FavouritesData extends BaseClass
 
         $lines = file($this->csvPath,FILE_IGNORE_NEW_LINES);
 
-        foreach ($lines as $row)
+        foreach ((array)$lines as $row)
         {
             $this->insertData($row);
         }
