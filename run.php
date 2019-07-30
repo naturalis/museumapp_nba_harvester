@@ -14,11 +14,12 @@
         exit(0);
     }
 
-    include_once('class.baseClass.php');
-    include_once('class.masterlistNbaData.php');
-    include_once('class.leenobjectenData.php');
-    include_once('class.favouritesData.php');
+    include_once("class.baseClass.php");
+    include_once("class.masterlistNbaData.php");
+    include_once("class.leenobjectenData.php");
+    include_once("class.favouritesData.php");
     include_once("class.iucnData.php");
+    include_once("class.ObjectlessTaxaData.php");
 
     switch ($opt["source"])
     {
@@ -67,7 +68,7 @@
             $sleepInterval = isset($_ENV["REAPER_RATE_LIMIT_IUCN"]) ? $_ENV["REAPER_RATE_LIMIT_IUCN"] : 0;
 
             $n = new IUCNData;
-echo '<pre>';
+
             $n->setDatabaseCredentials( $db );
             $n->connectDatabase();
 
@@ -84,6 +85,17 @@ echo '<pre>';
             $n->storeData();
             
             break;
+
+
+        case "taxa_no_objects":
+
+            $n = new ObjectlessTaxaData;
+
+            $n->setDatabaseCredentials( $db );
+            $n->import();
+            
+            break;
+
 
     }
 

@@ -95,7 +95,7 @@
                 $this->taxonList[]=$row;
             }
 
-            $this->log(sprintf("got %s taxa (mode: %s)",count($this->taxonList),$this->mode),3, "IUCN");
+            $this->log(sprintf("got %s taxa (mode: %s)",count((array)$this->taxonList),$this->mode),3, "IUCN");
         }
 
         public function getRegions()
