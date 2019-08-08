@@ -1,12 +1,13 @@
 <?php
 
-    $db["host"] = isset($_ENV["MYSQL_HOST"]) ? $_ENV["MYSQL_HOST"] : 'mysql';
-    $db["user"] = isset($_ENV["MYSQL_USER"]) ? $_ENV["MYSQL_USER"] : 'root';
-    $db["pass"] = isset($_ENV["MYSQL_ROOT_PASSWORD"]) ? $_ENV["MYSQL_ROOT_PASSWORD"] : 'root';
-    $db["database"] = isset($_ENV["MYSQL_DATABASE"]) ? $_ENV["MYSQL_DATABASE"] : 'reaper';
+    $db["host"] = isset($_ENV["MYSQL_HOST"]) ? $_ENV["MYSQL_HOST"] : null;
+    $db["user"] = isset($_ENV["MYSQL_USER"]) ? $_ENV["MYSQL_USER"] : null;
+    $db["pass"] = isset($_ENV["MYSQL_PASSWORD"]) ? $_ENV["MYSQL_PASSWORD"] : null;
+    $db["database"] = isset($_ENV["MYSQL_DATABASE"]) ? $_ENV["MYSQL_DATABASE"] : null;
 
     $opt = getopt("",["source:"]);
     $limit = getopt("",["limit:"]) ?? 0;
+    $taxon = getopt("",["taxon:"]) ?? null;
 
     if (!isset($opt["source"]))
     {
@@ -19,7 +20,8 @@
     include_once("class.leenobjectenData.php");
     include_once("class.favouritesData.php");
     include_once("class.iucnData.php");
-    include_once("class.ObjectlessTaxaData.php");
+    include_once("class.objectlessTaxaData.php");
+    include_once("class.mapsData.php");
 
     switch ($opt["source"])
     {
@@ -73,13 +75,22 @@
             $n->connectDatabase();
 
             $n->setSleepInterval( $sleepInterval );
+
             $n->setIucnToken( $iucnToken );
-            $n->setTaxonLimit( $limit );
             $n->setIucnUrl( "regions", $urlRegions );
             $n->setIucnUrl( "species", $urlSpecies );
             $n->setIucnUrl( "citation", $urlCitation );
 
-            $n->getTaxonList();
+            if (!empty($taxon["taxon"]))
+            {
+                $n->addIndividualTaxon( $taxon["taxon"] );
+            }
+            else
+            {
+                $n->setTaxonLimit( $limit );
+                $n->getTaxonList();
+            }
+
             $n->getRegions();
             $n->getIUCNStatuses();
             $n->storeData();
@@ -90,6 +101,18 @@
         case "taxa_no_objects":
 
             $n = new ObjectlessTaxaData;
+
+            $n->setDatabaseCredentials( $db );
+            $n->readFile();
+            $n->getImages();
+            $n->storeData();
+            
+            break;
+
+
+        case "maps":
+
+            $n = new MapsData;
 
             $n->setDatabaseCredentials( $db );
             $n->import();

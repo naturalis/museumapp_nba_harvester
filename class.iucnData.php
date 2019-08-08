@@ -41,6 +41,11 @@
             $this->token = $token;
         }
 
+        public function addIndividualTaxon( $taxon )
+        {
+            $this->taxonList[] = [ "taxon" => $taxon ];
+        }
+
         public function setInsertMode( $mode )
         {
             if (in_array($mode, ["add","replace"]))
