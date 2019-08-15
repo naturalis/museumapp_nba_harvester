@@ -5,9 +5,7 @@
     $db["pass"] = isset($_ENV["MYSQL_PASSWORD"]) ? $_ENV["MYSQL_PASSWORD"] : null;
     $db["database"] = isset($_ENV["MYSQL_DATABASE"]) ? $_ENV["MYSQL_DATABASE"] : null;
 
-    $opt = getopt("",["source:"]);
-    $limit = getopt("",["limit:"]) ?? 0;
-    $taxon = getopt("",["taxon:"]) ?? null;
+    $opt = getopt("",["source:","taxon_filter:","limit:","taxon:","mode:"]);
 
     if (!isset($opt["source"]))
     {
@@ -22,14 +20,13 @@
     include_once("class.iucnData.php");
     include_once("class.objectlessTaxaData.php");
     include_once("class.mapsData.php");
+    include_once("class.brahmsData.php");
 
     switch ($opt["source"])
     {
         case "nba":
 
             $n = new MasterlistNbaData;
-
-            echo "fetching NBA records\n";
 
             $n->setDatabaseCredentials( $db );
             $n->setMasterlistObjects();
@@ -81,13 +78,20 @@
             $n->setIucnUrl( "species", $urlSpecies );
             $n->setIucnUrl( "citation", $urlCitation );
 
-            if (!empty($taxon["taxon"]))
+            $n->setInsertMode( $opt["mode"] ?? "add" ); // add, replace
+
+            if (!empty($opt["taxon"]))
             {
-                $n->addIndividualTaxon( $taxon["taxon"] );
+                $n->addIndividualTaxon( $opt["taxon"] );
             }
             else
             {
-                $n->setTaxonLimit( $limit );
+                if (!empty($opt["taxon_filter"]))
+                {
+                    $n->setTaxonFilter( $opt["taxon_filter"] );
+                }
+
+                $n->setTaxonLimit( isset($opt["limit"]) ?? 0 );
                 $n->getTaxonList();
             }
 
@@ -96,7 +100,6 @@
             $n->storeData();
             
             break;
-
 
         case "taxa_no_objects":
 
@@ -109,7 +112,6 @@
             
             break;
 
-
         case "maps":
 
             $n = new MapsData;
@@ -119,6 +121,14 @@
             
             break;
 
+        case "brahms":
+
+            $n = new BrahmsData;
+
+            $n->setDatabaseCredentials( $db );
+            $n->import();
+            
+            break;
 
     }
 
