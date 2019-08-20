@@ -155,7 +155,7 @@
                         $this->log(sprintf("found status for '%s' in '%s'",$taxon["taxon"],$region["identifier"]),3, "IUCN");
                         $found[$taxon["taxon"]]=true;
 
-                        if ($rKey==0) // region=global
+                        if ($region["identifier"]=="global")
                         {
                             break;
                         }
@@ -176,12 +176,18 @@
                                 $this->log(sprintf("found status for '%s' in '%s' via synonym '%s'",$taxon["taxon"],$region["identifier"],$synonym),3, "IUCN");
                                 $found[$taxon["taxon"]]=true;
 
-                                if ($rKey==0) // region=global
+                                if ($region["identifier"]=="global")
                                 {
                                     break;
                                 }
                             }
                         }
+
+                        if ($found[$taxon["taxon"]]==true)
+                        {
+                            break;
+                        }
+
                     }
                 }
 

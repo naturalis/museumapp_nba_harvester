@@ -21,7 +21,7 @@ CREATE TABLE `nba` (
             "conditions" : [
                 { "field" : "unitID", "operator" : "IN", "value" : [ %s ] }
             ],
-            "fields" : [ "unitID", "gatheringEvent", "identifications", "kindOfUnit" , "sex" , "collectionType" , "phaseOrStage" ],
+            "fields" : [ "unitID", "gatheringEvent", "identifications", "kindOfUnit" , "recordBasis", "sex" , "collectionType" , "phaseOrStage", "preparationType" ],
             "size" : 1024
         }';
         private $apiUrl = 'https://api.biodiversitydata.nl/v2/specimen/query/?_querySpec=%s';
