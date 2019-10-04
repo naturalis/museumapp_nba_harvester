@@ -226,7 +226,7 @@
 
             foreach((array)$this->statuses as $status)
             {
-                $stmt->bind_param('ssssss',
+                $stmt->bind_param('sssssss',
                     $status["taxon"],
                     $status["region"],
                     $status["data"]["category"],
