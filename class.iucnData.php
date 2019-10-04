@@ -217,7 +217,12 @@
                 $this->db->query("truncate " . self::TABLE_IUCN);
             }
 
-            $stmt = $this->db->prepare("insert into ".self::TABLE_IUCN." (scientific_name,region,category,criteria,population_trend,assessment_date) values (?,?,?,?,?,?)");
+            // $stmt = $this->db->prepare("insert into ".self::TABLE_IUCN." (scientific_name,region,category,criteria,population_trend,assessment_date) values (?,?,?,?,?,?)");
+            $stmt = $this->db->prepare(
+                "insert into ".self::TABLE_IUCN." 
+                    (scientific_name,region,category,criteria,population_trend,assessment_date,taxonid) 
+                values
+                    (?,?,?,?,?,?,?)");
 
             foreach((array)$this->statuses as $status)
             {
@@ -227,7 +232,8 @@
                     $status["data"]["category"],
                     $status["data"]["criteria"],
                     $status["data"]["population_trend"],
-                    $status["data"]["assessment_date"]
+                    $status["data"]["assessment_date"],
+                    $status["data"]["taxonid"]
                 );
 
                 $stmt->execute();

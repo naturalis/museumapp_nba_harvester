@@ -2,6 +2,7 @@
 
 class LeenobjectenData extends BaseClass
 {
+    private $inserted_data=[];
     const TABLE = 'leenobjecten';
 
     public function __construct ()
@@ -34,15 +35,34 @@ class LeenobjectenData extends BaseClass
             exit();
         }
 
+        $tmp = file_get_contents($this->csvPath);
+
+        if (substr_count($tmp, "\t") > substr_count($tmp, "\n"))
+        {
+            $sep = "\t";
+            $this->log("detected csv-field seperator TAB");
+        }
+        else
+        {
+            $sep = ",";
+            $this->log("detected csv-field seperator ,");
+        }
+        
         $this->log("truncating table");
 
         $this->db->query("truncate " . self::TABLE);
 
-        while ($row = fgetcsv($fh, 1000, ","))
+        while ($row = fgetcsv($fh, 1000, $sep))
         {
             $this->insertData($row);
+            $this->inserted_data[] = $this->extractData($row);
         }
         fclose($fh);
+    }
+
+    public function getInsertedData ()
+    {
+        return $this->inserted_data;
     }
 
     private function extractData ($row)

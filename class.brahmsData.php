@@ -5,6 +5,7 @@ class BrahmsData extends BaseClass
     const TABLE = 'brahms';
     private $lines=[];
     private $imageUrl;
+    public $imported_x;
 
     public function __construct ()
     {
@@ -17,6 +18,8 @@ class BrahmsData extends BaseClass
         $this->csvPath =
             getenv('REAPER_FILE_BASE_PATH') . 
             getenv('REAPER_FILE_BRAHMS');
+
+        $this->imported_x = 0;            
     }
 
     public function __destruct ()
@@ -36,9 +39,7 @@ class BrahmsData extends BaseClass
             exit();
         }
 
-        $this->log("truncating table");
-
-        $this->db->query("truncate " . self::TABLE);
+        $this->emptyTable();
 
         while ($row = fgetcsv($fh, 1000, ","))
         {
@@ -47,7 +48,13 @@ class BrahmsData extends BaseClass
         fclose($fh);
     }
 
-    private function insertData ($data)
+    public function emptyTable()
+    {
+        $this->log("truncating table");
+        $this->db->query("truncate " . self::TABLE);
+    }
+
+    public function insertData ($data)
     {
         if (!empty($data[0]) && !empty($data[1]))
         {
@@ -61,6 +68,7 @@ class BrahmsData extends BaseClass
             if ($stmt->execute()) {
                 $this->log("Inserted data for '" . $data[0] . "'",3, "brahms");
                 $this->imported++;
+                $this->imported_x += $this->db->affected_rows;
             } else {
                 $this->log("Could not insert data for '" . $data[0] . "'",1, "brahms");
             }

@@ -1,9 +1,15 @@
 <?php
 
-    $db["host"] = isset($_ENV["MYSQL_HOST"]) ? $_ENV["MYSQL_HOST"] : null;
-    $db["user"] = isset($_ENV["MYSQL_USER"]) ? $_ENV["MYSQL_USER"] : null;
-    $db["pass"] = isset($_ENV["MYSQL_PASSWORD"]) ? $_ENV["MYSQL_PASSWORD"] : null;
-    $db["database"] = isset($_ENV["MYSQL_DATABASE"]) ? $_ENV["MYSQL_DATABASE"] : null;
+    $db["host"] = getEnv("MYSQL_HOST");
+    $db["user"] = getEnv("MYSQL_USER");
+    $db["pass"] = getEnv("MYSQL_PASSWORD");
+    $db["database"] = getEnv("MYSQL_DATABASE");
+
+    $imgSelectorDbPath = getEnv("IMAGE_SELECTOR_DB_PATH");
+    $imgSquaresDbPath = getEnv("IMAGE_SQUARES_DB_PATH");
+
+    $urlLeenImageRoot = getEnv("URL_LEENOBJECTEN_IMAGE_ROOT");
+
 
     $opt = getopt("",["source:","taxon_filter:","limit:","taxon:","mode:"]);
 
@@ -21,6 +27,8 @@
     include_once("class.objectlessTaxaData.php");
     include_once("class.mapsData.php");
     include_once("class.brahmsData.php");
+    include_once('class.imageSquaresNew.php');
+    include_once('class.imageSelector.php');
 
     switch ($opt["source"])
     {
@@ -45,6 +53,38 @@
             $n->setDatabaseCredentials( $db );
             $n->import();
             
+            $m = new imageSquares;
+            $m->setDatabaseCredentials( $db );
+            $m->setDatabaseFullPath( $imgSquaresDbPath );
+            $m->initialize();
+
+            $s = new imageSelector;
+            $s->setDatabaseFullPath( $imgSelectorDbPath );
+            $s->initialize();
+
+            foreach ($n->getInsertedData() as $data)
+            {
+                foreach((array)json_decode($data["afbeeldingen"]) as $afbeelding)
+                {
+                    if (empty(trim($afbeelding)))
+                    {
+                        continue;
+                    }
+
+                    $url = trim($urlLeenImageRoot) . trim($afbeelding);
+
+                    try
+                    {
+                        echo $m->saveUnitIDNameAndUrl($data["registratienummer"],$url), "\n";
+                        echo $s->saveUnitIDAndUrl($data["registratienummer"],$url),"\n";
+                    }
+                    catch(Exception $e)
+                    {
+                        echo $e->getMessage(), "\n";
+                    }  
+                }
+            }
+
             break;
 
         case "favourites":
@@ -121,18 +161,15 @@
             
             break;
 
-        case "brahms":
+        // case "brahms":
 
-            $n = new BrahmsData;
+        //     $n = new BrahmsData;
 
-            $n->setDatabaseCredentials( $db );
-            $n->import();
+        //     $n->setDatabaseCredentials( $db );
+        //     $n->import();
             
-            break;
+        //     break;
 
     }
-
-
-
 
 
