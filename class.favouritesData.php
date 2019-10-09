@@ -15,6 +15,12 @@ class FavouritesData extends BaseClass
         $this->csvPath =
             getenv('REAPER_FILE_BASE_PATH') . 
             getenv('REAPER_FILE_FAVOURITES_TXT');
+
+        if (!file_exists($this->csvPath))
+        {
+            $this->log(sprintf("csv file %s not found",$this->csvPath),1, "favourites");
+            exit();
+        }
     }
 
     public function __destruct ()

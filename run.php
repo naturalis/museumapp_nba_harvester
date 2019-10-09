@@ -29,6 +29,7 @@
     include_once("class.brahmsData.php");
     include_once('class.imageSquaresNew.php');
     include_once('class.imageSelector.php');
+    include_once('class.ttikPhotoSpecies.php');
 
     switch ($opt["source"])
     {
@@ -144,6 +145,16 @@
         case "taxa_no_objects":
 
             $n = new ObjectlessTaxaData;
+
+            $n->setDatabaseCredentials( $db );
+            $n->readFile();
+            $n->storeData();
+            
+            break;
+
+        case "ttik_photo_species":
+
+            $n = new TTIKPhotoSpecies;
 
             $n->setDatabaseCredentials( $db );
             $n->readFile();

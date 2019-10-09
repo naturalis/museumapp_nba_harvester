@@ -19,6 +19,12 @@ class BrahmsData extends BaseClass
             getenv('REAPER_FILE_BASE_PATH') . 
             getenv('REAPER_FILE_BRAHMS');
 
+        if (!file_exists($this->csvPath))
+        {
+            $this->log(sprintf("csv file %s not found",$this->csvPath),1, "brahms");
+            exit();
+        }
+
         $this->imported_x = 0;            
     }
 

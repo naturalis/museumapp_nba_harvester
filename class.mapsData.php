@@ -17,6 +17,12 @@ class MapsData extends BaseClass
         $this->csvPath =
             getenv('REAPER_FILE_BASE_PATH') . 
             getenv('REAPER_FILE_MAPS');
+
+        if (!file_exists($this->csvPath))
+        {
+            $this->log(sprintf("csv file %s not found",$this->csvPath),1, "maps");
+            exit();
+        }
     }
 
     public function __destruct ()

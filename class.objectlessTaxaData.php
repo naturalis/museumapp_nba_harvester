@@ -4,7 +4,6 @@ class ObjectlessTaxaData extends BaseClass
 {
     const TABLE = 'taxa_no_objects';
     private $lines=[];
-    private $imageUrl;
 
     public function __construct ()
     {
@@ -18,13 +17,11 @@ class ObjectlessTaxaData extends BaseClass
             getenv('REAPER_FILE_BASE_PATH') . 
             getenv('REAPER_FILE_TAXA_NO_OBJECTS');
 
-        if (empty(getenv('REAPER_URL_TTIK_TAXON')))
+        if (!file_exists($this->csvPath))
         {
-            $this->log('No URL set for TTIk image retrieval!',1, "taxa_no_objects");
+            $this->log(sprintf("csv file %s not found",$this->csvPath),1, "taxa_no_objects");
             exit();
         }
-
-        $this->imageUrl = getenv('REAPER_URL_TTIK_TAXON');
     }
 
     public function __destruct ()
@@ -39,26 +36,7 @@ class ObjectlessTaxaData extends BaseClass
 
         foreach ((array)$lines as $row)
         {
-            $this->lines[]= [ "taxon" => $row, "main_image" => null ];
-        }
-    }
-
-    public function getImages()
-    {
-        foreach ((array)$this->lines as $key=>$taxon)
-        {
-            $url = sprintf($this->imageUrl, rawurlencode($taxon["taxon"]));
-            $json = file_get_contents($url);
-            $data = json_decode($json,true);
-
-            if (isset($data["taxon"]) && isset($data["taxon"]["overview_image"]))
-            {
-                $this->lines[$key]["main_image"] = $data["taxon"]["overview_image"];
-            }
-            else
-            {
-                $this->log(sprintf('No overview image for %s',$taxon["taxon"]),1, "taxa_no_objects");
-            }
+            $this->lines[]= [ "taxon" => $row ];
         }
     }
 
@@ -81,8 +59,8 @@ class ObjectlessTaxaData extends BaseClass
         {
             $this->total++;
 
-            $stmt = $this->db->prepare("insert into ".self::TABLE." (taxon,main_image) values (?,?)");
-            $stmt->bind_param('ss', $data["taxon"], $data["main_image"]);
+            $stmt = $this->db->prepare("insert into ".self::TABLE." (taxon) values (?)");
+            $stmt->bind_param('s', $data["taxon"]);
 
             if ($stmt->execute()) {
                 $this->log("Inserted data for '" . $data['taxon'] . "'",3, "taxa_no_objects");
