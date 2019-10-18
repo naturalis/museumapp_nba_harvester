@@ -149,6 +149,8 @@
                 {
                     $data = $this->_fetchRegionTaxonData($taxon["taxon"],$region["identifier"]);
 
+                    print_r($data);
+
                     if (isset($data["result"]) && !empty($data["result"]))
                     {
                         $this->statuses[]=[ "taxon" => $taxon["taxon"], "region" => $region["name"], "data" => $data["result"][0] ];
