@@ -72,7 +72,7 @@
                         continue;
                     }
 
-                    $url = trim($urlLeenImageRoot) . trim($afbeelding);
+                    $url = trim($urlLeenImageRoot) . rawurlencode(trim($afbeelding));
 
                     try
                     {
