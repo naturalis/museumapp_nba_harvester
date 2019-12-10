@@ -46,7 +46,7 @@ class MapsData extends BaseClass
 
         $this->db->query("truncate " . self::TABLE);
 
-        while ($row = fgetcsv($fh, 1000, ","))
+        while ($row = fgetcsv($fh, 0, ","))
         {
             $this->insertData($row);
         }
@@ -59,8 +59,8 @@ class MapsData extends BaseClass
         {
             $this->total++;
 
-            $stmt = $this->db->prepare("insert into ".self::TABLE." (taxon,url,text_dutch,text_english) values (?,?,?,?)");
-            $stmt->bind_param('ssss', $data[0], $data[1], $data[2], $data[3]);
+            $stmt = $this->db->prepare("insert into ".self::TABLE." (taxon,url,text_dutch,text_english,citation) values (?,?,?,?,?)");
+            $stmt->bind_param('sssss', $data[0], $data[1], $data[2], $data[3], $data[4]);
 
             if ($stmt->execute()) {
                 $this->log("Inserted data for '" . $data[0] . "'",3, "maps");
