@@ -149,7 +149,7 @@
                 {
                     $data = $this->_fetchRegionTaxonData($taxon["taxon"],$region["identifier"]);
 
-                    print_r($data);
+                    // print_r($data);
 
                     if (isset($data["result"]) && !empty($data["result"]))
                     {
